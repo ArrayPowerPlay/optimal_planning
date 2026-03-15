@@ -1,0 +1,82 @@
+# cryptarithmetic puzzle is a mathematical exercise where the digits of some numbers 
+# are represented by letters (or symbols). Each letter represents a unique digit. The
+# goal is to find the digits such that a given mathematical equation is verified:
+
+#       CP
+# +     IS
+# +    FUN
+# --------
+# =   TRUE
+
+# One assignment of letters to digits yields the following equation:
+
+#       23
+# +     74
+# +    968
+# --------
+# =   1065
+# There are other answers to this problem. We'll show how to find all solutions.
+
+from ortools.sat.python import cp_model
+
+
+class VarArraySolutionPrinter(cp_model.CpSolverSolutionCallback):
+    def __init__(self, variables: list[cp_model.IntVar]):
+        cp_model.CpSolverSolutionCallback.__init__(self)
+        self.__variables = variables
+        self.__solution_count = 0
+
+    def on_solution_callback(self):
+        self.__solution_count += 1
+        for v in self.__variables:
+            print(f"{v}={self.value(v)}", end=" ")
+        print()
+
+    @property
+    def solution_count(self):
+        return self.__solution_count
+    
+
+def main():
+    model = cp_model.CpModel()
+
+    # Defining the variables
+    base = 10
+    c = model.new_int_var(1, base - 1, "C")
+    p = model.new_int_var(0, base - 1, "P")
+    i = model.new_int_var(1, base - 1, "I")
+    s = model.new_int_var(0, base - 1, "S")
+    f = model.new_int_var(1, base - 1, "F")
+    u = model.new_int_var(0, base - 1, "U")
+    n = model.new_int_var(0, base - 1, "N")
+    t = model.new_int_var(1, base - 1, "T")
+    r = model.new_int_var(0, base - 1, "R")
+    e = model.new_int_var(0, base - 1, "E")
+
+    # We need to group variables in a list to use the constraint AllDifferent.
+    letters = [c, p, i, s, f, u, n, t, r, e]
+
+    assert base >= len(letters)
+
+    # Defining the constraints
+    # Ensure that all letters have different values
+    model.add_all_different(letters)
+    model.add(c * base + p + i * base + s + f * base * base + u * base + n == 
+            t * base * base * base + r * base * base + u * base + e)
+    
+    solver = cp_model.CpSolver()
+    solution_printer = VarArraySolutionPrinter(letters)
+    solver.parameters.enumerate_all_solutions = True
+    status = solver.Solve(model, solution_printer)
+
+    print(f"Status: {solver.status_name(status)}")
+    print(f"Number of solutions: {solution_printer.solution_count}")
+
+    # Statistics
+    print(f"Number of conflicts: {solver.num_conflicts}")
+    print(f"Number of branches: {solver.num_branches}")
+    print(f"Wall time: {solver.wall_time:.3f} s")
+
+
+if __name__ == "__main__":
+    main()
