@@ -1,4 +1,4 @@
-# In this section we will solve the N-queens problem (N = 8) using CP-SAT
+# In this section we will solve the N-queens problem using CP-SAT
 
 import sys
 import time

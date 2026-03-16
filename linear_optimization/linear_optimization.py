@@ -20,7 +20,6 @@ def main():
     print(f"Total of variables: {solver.NumVariables()}")
 
     # Define the constraint
-    infinity = solver.infinity()
     solver.Add(x_var + y_var <= 2)
 
     # Show the number of constraint
