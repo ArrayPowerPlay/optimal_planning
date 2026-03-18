@@ -3,7 +3,7 @@ from collections import deque
 
 
 def revise(x, y, cons, domains):
-    change = True
+    change = False
     to_remove = []
 
     for v1 in domains[x]:
@@ -22,16 +22,18 @@ def revise(x, y, cons, domains):
             else:
                 _, i, j, a, b = cons
                 if x == i:
-                    if v1 <= a * v2 + b:
+                    if v1 == a * v2 + b:
                         ok = True
                         break
                 else:
-                    if v2 <= a * v1 + b:
+                    if v2 == a * v1 + b:
                         ok = True
                         break
         if not ok:
             to_remove.append(v1)
             change = True
+    for v in to_remove:
+        domains[x].remove(v)
     return change
 
 
