@@ -55,6 +55,8 @@ def solve(n, Q, c):
 
     def demand_callback(from_index):
         node = manager.IndexToNode(from_index)
+        if node < 0:
+            return 0
         return demands[node]
     
     demand_callback_index = routing.RegisterUnaryTransitCallback(demand_callback)
@@ -88,6 +90,10 @@ def solve(n, Q, c):
     params.first_solution_strategy = (
         routing_enums_pb2.FirstSolutionStrategy.PARALLEL_CHEAPEST_INSERTION
     )
+    params.local_search_metaheuristic = (
+        routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
+    )
+    params.time_limit.nanos = 790_000_000
 
     solution = routing.SolveWithParameters(params)
 
@@ -103,14 +109,15 @@ def solve(n, Q, c):
             route.append(node)
         index = solution.Value(routing.NextVar(index))
 
-    return " ".join(map(str, route))
+    return route
 
 
 def main():
     n, Q, c = read_input()
     print(n)
     route = solve(n, Q, c)
-    print(route)
+    if route:
+        print(" ".join(map(str, route)))
 
 
 if __name__ == "__main__":
