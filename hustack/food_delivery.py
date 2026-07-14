@@ -103,7 +103,7 @@ def solve(n, Q, c):
     index = routing.Start(0)    # First index in the first vehicle's route
     route = []
 
-    while not routing.IsEnd(index):
+    while not routing.IsEnd(index):   # routing.IsEnd(index) = True nếu index là index cuối cùng của lộ trình (là depot quay về)
         node = manager.IndexToNode(index)
         if node != 0:
             route.append(node)

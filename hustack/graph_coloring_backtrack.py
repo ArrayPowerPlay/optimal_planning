@@ -2,6 +2,8 @@
 # nodes of the graph (2 adjacent nodes must have different colors)
     
 
+# Ý tưởng: Ta cần tìm k là số màu nhỏ nhất để tô, ta xét k lần lượt từ 1 đến n rồi backtrack theo k
+# Ta xét điều kiện không có 2 node nào có màu trùng nhau bằng cách xây dựng ma trận kề
 def is_safe(node, c, color, graph):
     # Try if we can use color 'c' to color node 'node'
     for neighbor in graph[node]:
@@ -13,7 +15,7 @@ def is_safe(node, c, color, graph):
 def backtrack(node, n, k, color, graph):
     # Try to color graph sequentially from node 'node' to node n - 1
     if node == n:
-        return True     # Colored all nodes
+        return True     # Colored all nodes with all different colors
     
     for c in range(1, k + 1):
         if is_safe(node, c, color, graph):
@@ -26,7 +28,7 @@ def backtrack(node, n, k, color, graph):
 
 
 def min_graph_coloring_backtrack(n, edges):
-    graph = [[] for _ in range(n)]
+    graph = [[] for _ in range(n)]  # Xây dựng ma trận kề
     for u, v in edges:
         u -= 1
         v -= 1

@@ -1,40 +1,43 @@
 from ortools.sat.python import cp_model
+from pathlib import Path
 import sys
 import random
 
-def solve_bacp_ortools(n, p, credits, Q, alpha, beta, lamda, gamma):
+def solve_ortools(n, p, c, Q, alpha, beta, lamda, gamma):
     model = cp_model.CpModel()
+    x = [[0] * p for i in range(n)]
+    for i in range(n):
+        for j in range(p):
+            x[i][j] = model.new_bool_var(f"x[{i}][{j}]")
 
-    # x[i, j] = course i assigned at semester j
-    x = {}
-    for i in range(1, n + 1):
-        for j in range(1, p + 1):
-            x[(i, j)] = model.new_bool_var(f'x_{i}_{j}')
+    for i in range(n):
+        model.add(sum(x[i][j] for j in range(p)) == 1)
 
-    # A course can only be assigned at one semester
-    for i in range(1, n + 1):
-        model.add(sum(x[(i, k)] for k in range(1, p + 1)) == 1)
+    for j in range(p):
+        model.add(sum(x[i][j] for i in range(n)) >= alpha)
+        model.add(sum(x[i][j] for i in range(n)) <= beta)
+        model.add(sum(c[i] * x[i][j] for i in range(n)) >= lamda)
+        model.add(sum(c[i] * x[i][j] for i in range(n)) <= gamma)
 
-    for k in range(1, p + 1):
-        model.add(sum(x[(i, k)] for i in range(1, n + 1)) >= alpha)
-        model.add(sum(x[(i, k)] for i in range(1, n + 1)) <= beta)
-        model.add(sum(credits[i][k] * x[(i, k)] for i in range(1, n + 1)) >= lamda)
-        model.add(sum(credits[i][k] * x[(i, k)] for i in range(1, n + 1)) <= gamma)
-
-    # Prerequisites condition
     for (i, j) in Q:
-        semester_i = sum(x[(i, k)] * k for k in range(1, p + 1))
-        semester_j = sum(x[(j, k)] * k for k in range(1, p + 1))
+        i -= 1
+        j -= 1
+        semester_i = sum(x[i][k] * k for k in range(p))
+        semester_j = sum(x[j][k] * k for k in range(p))
         model.add(semester_i < semester_j)
 
+    total_credits = sum(c)
+    max_credits = model.new_int_var(0, total_credits, "max_credits")
+    for j in range(p):
+        model.add(max_credits >= sum(c[i] * x[i][j] for i in range(n)))
+    model.minimize(max_credits)
+    
     solver = cp_model.CpSolver()
-    status = solver.Solve()
-
-    if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
-        for i in range(1, n + 1):
-            for j in range(1, p + 1):
-                if solver.Value(x[(i, k)]):
-                    print(f"Course {i} is assigned to semester {j}")
+    solver.parameters.max_time_in_seconds = 5.0
+    status = solver.solve(model)
+    
+    if status == cp_model.FEASIBLE or status == cp_model.OPTIMAL:
+        print(solver.objective_value)
 
 
 def read_input():
@@ -44,9 +47,9 @@ def read_input():
     n = int(input[idx]); idx += 1
     p = int(input[idx]); idx += 1
     
-    credits = []
+    c = []
     for _ in range(n):
-        credits.append(int(input[idx]))
+        c.append(int(input[idx]))
         idx += 1
 
     m = int(input[idx])
@@ -61,7 +64,7 @@ def read_input():
     lamda = int(input[idx]); idx += 1
     gamma = int(input[idx]); idx += 1
 
-    return n, p, credits, Q, alpha, beta, lamda, gamma
+    return n, p, c, Q, alpha, beta, lamda, gamma
 
 
 def solve_bacp_tabu_search(n, p, credits, Q, alpha, beta, lamda, gamma):
@@ -128,7 +131,9 @@ def solve_bacp_tabu_search(n, p, credits, Q, alpha, beta, lamda, gamma):
     return best_sol, best_violation
 
 
-def main():
-    n, p, credits, Q, alpha, beta, lamda, gamma = read_input()
-    solve_bacp_ortools(n, p, credits, Q, alpha, beta, lamda, gamma)
-    # solve_bacp_tabu_search(n, p, credits, Q, alpha, beta, lamda, gamma)
+if __name__ == "__main__":
+    input_path = Path(__file__).with_name("input.txt")
+    with input_path.open("r", encoding="utf-8") as f:
+        sys.stdin = f
+        n, p, c, Q, alpha, beta, lamda, gamma = read_input()
+        solve_ortools(n, p, c, Q, alpha, beta, lamda, gamma)
